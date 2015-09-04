@@ -10,15 +10,15 @@ import UIKit
 
 class DataSource: NSObject, UITableViewDataSource {
     var items: [AnyObject]
-    var configureCell:(cell:UITableViewCell, item: AnyObject)->Void)
+    var configureCell:((cell:UITableViewCell, item: AnyObject)->Void)
     var cellIdentifier:String
    
     init(items:[AnyObject], identifier:String, cellhandler: (cell:UITableViewCell, item: AnyObject)->Void){
-        super.init()
+
         self.items = items
         self.configureCell = cellhandler
         self.cellIdentifier = identifier
-        
+        super.init()
     }
     
     

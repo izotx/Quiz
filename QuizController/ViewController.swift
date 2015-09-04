@@ -11,7 +11,12 @@ import UIKit
 
 class QuizCell:UITableViewCell{
     static let identifier = "kQuizCell"
-
+    @IBOutlet weak var answerLabel: UILabel!
+    required init(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        
+    }
 }
 
 class ViewController: UIViewController {
@@ -35,33 +40,35 @@ class ViewController: UIViewController {
         
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
         networkingModel.downloadFile { (dict:[String : AnyObject]?, error) -> Void in
+                        //println("Downloaded! woot woot \(dict)")
             if let dict = dict {
-                self.quizModel = QuizModel(json: dict)
-                self.tableView.registerClass(QuizCell, forCellReuseIdentifier: QuizCell.identifier)
                 
-                self.dataSource = DataSource(items: self.quizModel!.getAllQuestions(), identifier: QuizCell.identifier cellhandler: { (cell, item) -> Void in
+                self.quizModel = QuizModel(json: dict)
+                self.tableView.registerClass(QuizCell.self, forCellReuseIdentifier: QuizCell.identifier)
+                
+                self.dataSource = DataSource(items: self.quizModel!.getAllQuestions(), identifier: QuizCell.identifier, cellhandler: { (cell, item) -> Void in
+                    println("Items \(item)")
+                    if let c = cell as? QuizCell, let item = item as? QuizQuestion{
+                        
+                        
+                    }
                     
                 })
+                self.tableView.dataSource = self.dataSource
+                
             }
 
             if let error = error {
                 //display error
             }
             
-            
         UIApplication.sharedApplication().networkActivityIndicatorVisible = false
         }
-        
-        
-        
-        
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
-
 }
 
