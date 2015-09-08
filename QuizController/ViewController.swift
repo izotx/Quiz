@@ -14,12 +14,17 @@ class QuizCell:UITableViewCell{
     @IBOutlet weak var answerLabel: UILabel!
     required init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-        
-        
+            
     }
+
+    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+    
+    }
+
 }
 
-class ViewController: UIViewController {
+class ViewController: UIViewController,UITableViewDelegate {
     @IBOutlet weak var questionConstraintHeight: NSLayoutConstraint!
     @IBOutlet weak var feedbackConstraintHeight: NSLayoutConstraint!
 
@@ -30,6 +35,37 @@ class ViewController: UIViewController {
     var dataSource: DataSource?
     var quizModel: QuizModel?
     var networkingModel = NetworkingModel()
+    
+    
+    func updateTableContent(index:Int){
+        if let quizModel = quizModel {
+        let question = self.quizModel!.getAllQuestions()[index]
+            questionTextView.text = question.question
+            
+            self.feedbackTextView.text = ""
+            
+        self.dataSource = DataSource(items: self.quizModel!.getAllQuestions()[self.quizModel!.currentQuestionIndex].answers, identifier: QuizCell.identifier, cellhandler: { (cell, item) -> Void in
+            
+            if let c = cell as? QuizCell, let item = item as? String{
+                c.answerLabel.text = item;
+            }
+            
+        })
+        self.tableView.dataSource = self.dataSource
+        self.tableView.delegate = self
+        self.tableView.reloadData()
+        }
+    }
+    
+    
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        
+        if let quizModel = self.quizModel{
+            quizModel.selectAnswer(quizModel.currentQuestionIndex, answer: indexPath.row)
+            self.tableView.reloadData()
+        }
+    }
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,17 +80,11 @@ class ViewController: UIViewController {
             if let dict = dict {
                 
                 self.quizModel = QuizModel(json: dict)
-                self.tableView.registerClass(QuizCell.self, forCellReuseIdentifier: QuizCell.identifier)
-                
-                self.dataSource = DataSource(items: self.quizModel!.getAllQuestions(), identifier: QuizCell.identifier, cellhandler: { (cell, item) -> Void in
-                    println("Items \(item)")
-                    if let c = cell as? QuizCell, let item = item as? QuizQuestion{
-                        
-                        
-                    }
-                    
+               
+               // self.tableView.registerClass(QuizCell.self, forCellReuseIdentifier: QuizCell.identifier)
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    self.updateTableContent(0)
                 })
-                self.tableView.dataSource = self.dataSource
                 
             }
 

@@ -59,8 +59,6 @@ class NetworkingModel{
                 
         }).resume()
     }
-    
-    
 }
 
 
@@ -164,14 +162,32 @@ class QuizModel{
         return (correctCount, wrongCount, (Double(correctCount) / Double((correctCount+wrongCount))))
     }
     
-    
+    //It might be initially selected answer
     func selectAnswer(question:Int, answer:Int){
+        if isValid(question, answer: answer)
+        {
+            answers[question] = answer
+        }
+    }
+    //Confirmed Answer
+    func confirmAnswer(question:Int, answer:Int){
         if isValid(question, answer: answer)
         {
             answers[question] = answer
             updateStats(question, answer: answer)
         }
     }
+    
+    func isSelected(question:Int, answer:Int)-> Bool{
+        if isValid(question, answer: answer)
+        {
+            return answers[question] == 1
+            
+        }
+        return false
+    }
+    
+    
     
     
     func getFeedback(question:Int, answer:Int)->String{
