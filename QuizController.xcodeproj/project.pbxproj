@@ -17,6 +17,10 @@
 		40124E0E1B94F1B4009391D7 /* DataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40124E0C1B94F1B4009391D7 /* DataSource.swift */; };
 		40124E101B94F404009391D7 /* QuizModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40124E0F1B94F404009391D7 /* QuizModel.swift */; };
 		40124E111B94F404009391D7 /* QuizModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40124E0F1B94F404009391D7 /* QuizModel.swift */; };
+		40340AFF1BA35A5500A5C57C /* handHygieneHelpScreen.png in Resources */ = {isa = PBXBuildFile; fileRef = 40340AFE1BA35A5500A5C57C /* handHygieneHelpScreen.png */; };
+		40340B001BA35A5500A5C57C /* handHygieneHelpScreen.png in Resources */ = {isa = PBXBuildFile; fileRef = 40340AFE1BA35A5500A5C57C /* handHygieneHelpScreen.png */; };
+		40340B021BA35D5300A5C57C /* StatsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40340B011BA35D5300A5C57C /* StatsViewController.swift */; };
+		40340B031BA35D5300A5C57C /* StatsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40340B011BA35D5300A5C57C /* StatsViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +46,8 @@
 		40124E021B94E8AF009391D7 /* QuizControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizControllerTests.swift; sourceTree = "<group>"; };
 		40124E0C1B94F1B4009391D7 /* DataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataSource.swift; sourceTree = "<group>"; };
 		40124E0F1B94F404009391D7 /* QuizModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuizModel.swift; sourceTree = "<group>"; };
+		40340AFE1BA35A5500A5C57C /* handHygieneHelpScreen.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = handHygieneHelpScreen.png; sourceTree = "<group>"; };
+		40340B011BA35D5300A5C57C /* StatsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatsViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +91,7 @@
 			children = (
 				40124DEC1B94E8AF009391D7 /* AppDelegate.swift */,
 				40124DEE1B94E8AF009391D7 /* ViewController.swift */,
+				40340B011BA35D5300A5C57C /* StatsViewController.swift */,
 				40124E0F1B94F404009391D7 /* QuizModel.swift */,
 				40124DF01B94E8AF009391D7 /* Main.storyboard */,
 				40124DF31B94E8AF009391D7 /* Images.xcassets */,
@@ -98,6 +105,7 @@
 		40124DEA1B94E8AF009391D7 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				40340AFE1BA35A5500A5C57C /* handHygieneHelpScreen.png */,
 				40124DEB1B94E8AF009391D7 /* Info.plist */,
 			);
 			name = "Supporting Files";
@@ -201,6 +209,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				40124DF21B94E8AF009391D7 /* Main.storyboard in Resources */,
+				40340AFF1BA35A5500A5C57C /* handHygieneHelpScreen.png in Resources */,
 				40124DF71B94E8AF009391D7 /* LaunchScreen.xib in Resources */,
 				40124DF41B94E8AF009391D7 /* Images.xcassets in Resources */,
 			);
@@ -210,6 +219,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				40340B001BA35A5500A5C57C /* handHygieneHelpScreen.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,6 +233,7 @@
 				40124E101B94F404009391D7 /* QuizModel.swift in Sources */,
 				40124E0D1B94F1B4009391D7 /* DataSource.swift in Sources */,
 				40124DEF1B94E8AF009391D7 /* ViewController.swift in Sources */,
+				40340B021BA35D5300A5C57C /* StatsViewController.swift in Sources */,
 				40124DED1B94E8AF009391D7 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -233,6 +244,7 @@
 			files = (
 				40124E0E1B94F1B4009391D7 /* DataSource.swift in Sources */,
 				40124E111B94F404009391D7 /* QuizModel.swift in Sources */,
+				40340B031BA35D5300A5C57C /* StatsViewController.swift in Sources */,
 				40124E031B94E8AF009391D7 /* QuizControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -421,6 +433,7 @@
 				40124E081B94E8AF009391D7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		40124E091B94E8AF009391D7 /* Build configuration list for PBXNativeTarget "QuizControllerTests" */ = {
 			isa = XCConfigurationList;
@@ -429,6 +442,7 @@
 				40124E0B1B94E8AF009391D7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
