@@ -16,6 +16,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+//        let defs =  NSUserDefaults.standardUserDefaults()
+//        let dict =  defs.dictionaryRepresentation()
+//        for key in dict{
+//           defs.removeObjectForKey(key.0 as! String)
+//        }
+        
         return true
     }
 

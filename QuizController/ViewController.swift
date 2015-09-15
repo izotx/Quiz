@@ -45,17 +45,34 @@ class ViewController: UIViewController,UITableViewDelegate {
     var quizModel: QuizModel?
     var networkingModel = NetworkingModel()
     var currentQuestion:QuizQuestion?
+    var tempAnswerIndex:Int?
+    
     
     
     @IBAction func confirmAnswerAction(sender: AnyObject) {
-       
-        if let quizModel = quizModel, qid = currentQuestion?.qid {
-             self.feedbackTextView.alpha = 0
+
+        if let quizModel = quizModel, qid = currentQuestion?.qid, answer = tempAnswerIndex {
+            quizModel.selectAnswer(qid, answer: answer) // select answer
+            
+            self.feedbackTextView.alpha = 0
             UIView.animateWithDuration(1, animations: { () -> Void in
                 self.feedbackTextView.alpha = 1
             }, completion: { (completed) -> Void in
+                
                 self.updateTableContent(quizModel.currentQuestionArrayIndex)
-                self.feedbackTextView.text = quizModel.confirmAnswerAndGetFeedback(qid) as String
+                self.feedbackTextView.text = quizModel.confirmAnswerAndGetFeedback(qid, answer:answer) as String
+                //self.showFeedback()
+                self.delay(1.0, closure: { () -> () in
+                    self.performSegueWithIdentifier("showStatsSegue", sender: self)
+                })
+            })
+        }
+        else{
+            self.feedbackTextView.alpha = 0
+            UIView.animateWithDuration(1, animations: { () -> Void in
+                self.feedbackTextView.alpha = 1
+                }, completion: { (completed) -> Void in
+                    self.feedbackTextView.text = "Please select your answer first"
             })
         }
     }
@@ -63,6 +80,8 @@ class ViewController: UIViewController,UITableViewDelegate {
       
     
     func updateTableContent(index:Int){
+       
+
         if let quizModel = quizModel {
             //set index of question
             quizModel.currentQuestionArrayIndex = index
@@ -84,27 +103,79 @@ class ViewController: UIViewController,UITableViewDelegate {
             
             if !quizModel.questionAnswered(currentQuestion!.qid!)
             {
-                 previousQuestionButton.enabled = false
+                  previousQuestionButton.enabled = false
                   nextQuestionButton.enabled = false
             }
             
-            
-            
             let question = quizModel.getAllQuestions()[index]
             questionTextView.text = question.question
-            
+
+           
+          
             self.feedbackTextView.text = ""
+            self.tableView.userInteractionEnabled = true
+            self.doneButton.enabled = true
+            
+           
+            if let qid  = currentQuestion?.qid, aid = quizModel.getAnswer(qid){
+                if quizModel.isSelected(qid, answer: aid){
+                    if quizModel.isCorrect(qid, aid: aid)
+                    {
+                        self.tableView.userInteractionEnabled = false
+                        feedbackTextView.text = quizModel.getFeedback(qid, answer: aid)
+                        self.doneButton.enabled = false
+                    }
+                }
+            }
+            
             
         self.dataSource = DataSource(items: quizModel.getAllQuestions()[self.quizModel!.currentQuestionArrayIndex].answers, identifier: QuizCell.identifier, cellhandler: { (cell, item, indexPath) -> Void in
             
             if let c = cell as? QuizCell, let item = item as? String, qid = self.currentQuestion?.qid{
                 c.answerLabel.text = item;
                 c.accessoryType = UITableViewCellAccessoryType.None
-               
-                if quizModel.isSelected(qid, answer: indexPath.row)
-                {
-                  c.accessoryType = UITableViewCellAccessoryType.Checkmark
+                c.tintColor = UIColor.whiteColor()
+    
+                if let tempAnswer = self.tempAnswerIndex{//user selected answer
+                    
+                    if indexPath.row == tempAnswer
+                    {
+                        c.accessoryType = UITableViewCellAccessoryType.Checkmark
+                    }
+                    
                 }
+                else{
+                    if quizModel.isSelected(qid, answer: indexPath.row){
+                         c.accessoryType = UITableViewCellAccessoryType.Checkmark
+                        
+                        if quizModel.isCorrect(qid, aid: indexPath.row)
+                        {
+                            c.tintColor = UIColor.greenColor()
+                          
+                        }
+                    }
+                }
+                
+                if quizModel.isSelected(qid, answer: indexPath.row) && self.tempAnswerIndex == nil {
+                    c.accessoryType = UITableViewCellAccessoryType.Checkmark
+                    if quizModel.isCorrect(qid, aid: indexPath.row)
+                    {
+                        c.tintColor = UIColor.greenColor()
+                        
+                    }
+                }
+                
+                if quizModel.isSelected(qid, answer: indexPath.row) && self.tempAnswerIndex != nil && self.tempAnswerIndex == indexPath.row{
+                    c.accessoryType = UITableViewCellAccessoryType.Checkmark
+                    if quizModel.isCorrect(qid, aid: indexPath.row)
+                    {
+                        c.tintColor = UIColor.greenColor()
+                        
+                    }
+                }
+
+                
+                
             }
         })
 
@@ -118,6 +189,7 @@ class ViewController: UIViewController,UITableViewDelegate {
 
     @IBAction func previousQuestionAction(sender: AnyObject) {
         if let model = quizModel{
+            tempAnswerIndex = nil
             model.previousQuestion()
             updateTableContent(model.currentQuestionArrayIndex)
         }
@@ -125,21 +197,42 @@ class ViewController: UIViewController,UITableViewDelegate {
     
     @IBAction func nextQuestionAction(sender: AnyObject) {
         if let model = quizModel{
+            tempAnswerIndex = nil
             model.nextQuestion()
             updateTableContent(model.currentQuestionArrayIndex)
         }
-    
     }
     
+//    
+//    func tableView(tableView: UITableView, willSelectRowAtIndexPath indexPath: NSIndexPath) -> NSIndexPath? {
+//        if let quizModel = self.quizModel, qid = currentQuestion?.qid{
+//            if quizModel.isSelected(qid, answer: indexPath.row) && quizModel.isCorrect(qid, aid: indexPath.row)
+//            {
+//                return nil
+//            }
+//        }
+//        return indexPath
+//    }
+//    
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         
+      
         if let quizModel = self.quizModel, qid = currentQuestion?.qid{
-           
-            quizModel.selectAnswer(qid, answer: indexPath.row)
+            
+            tempAnswerIndex = indexPath.row
             self.feedbackTextView.text = ""
             self.tableView.reloadData()
         }
+    }
+    
+    func delay(delay:Double, closure:()->()) {
+        dispatch_after(
+            dispatch_time(
+                DISPATCH_TIME_NOW,
+                Int64(delay * Double(NSEC_PER_SEC))
+            ),
+            dispatch_get_main_queue(), closure)
     }
     
     
@@ -167,6 +260,7 @@ class ViewController: UIViewController,UITableViewDelegate {
 
             if let error = error {
                 //display error
+                self.feedbackTextView.text = "Error. Please try again later."
             }
             
         UIApplication.sharedApplication().networkActivityIndicatorVisible = false
@@ -177,5 +271,27 @@ class ViewController: UIViewController,UITableViewDelegate {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
+    func showFeedback(){
+      let vc =  storyboard?.instantiateViewControllerWithIdentifier("FeedbackViewController") as! FeedbackViewController
+        vc.modalPresentationStyle = UIModalPresentationStyle.FullScreen
+        vc.modalTransitionStyle = UIModalTransitionStyle.FlipHorizontal
+        self.presentViewController(vc, animated: true) { () -> Void in
+            
+        }
+    }
+    
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if segue.identifier == "showStatsSegue"{
+            if let vc = segue.destinationViewController as? StatsViewController{
+                let vc = segue.destinationViewController as! StatsViewController
+                vc.modalPresentationStyle = UIModalPresentationStyle.FullScreen
+                vc.modalTransitionStyle = UIModalTransitionStyle.FlipHorizontal
+                vc.quizModel = quizModel
+            }
+            
+        }
+    }
+    
 }
 
