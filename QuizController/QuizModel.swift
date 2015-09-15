@@ -40,7 +40,7 @@ class NetworkingModel{
     static func quizAnswerRequest(qid:Int,aid:Int,correct:Int, user:String){
         let request = NSMutableURLRequest(URL: NSURL(string: URLS.kSave.rawValue)!)
         request.HTTPMethod = "POST"
-        let postString = "qid=\(qid)&user==\(user)&aid=\(aid)&correct=\(correct)"
+        let postString = "qid=\(qid)&user=\(user)&aid=\(aid)&correct=\(correct)"
         request.HTTPBody = postString.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
         
         let task = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration()).dataTaskWithRequest(request, completionHandler: { (data, response, error) -> Void in
