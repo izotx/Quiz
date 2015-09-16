@@ -7,7 +7,12 @@
 //
 
 import UIKit
+import Alamofire
 
+enum URLS:String{
+    case kJSONQuiz = "http://localhost:8888/JSON/nursing1.json"
+    case kAnswers = "http://izotx.com/igerm/addquiz.php"
+}
 
 
 class QuizQuestion{
@@ -32,12 +37,12 @@ enum QuizQuestions:String{
 class NetworkingModel{
     
     //Get JSON File
-    func downloadFile(completetion:([String:AnyObject]?, error:NSString?)->Void){
+   static func downloadFile(completetion:([String:AnyObject]?, error:NSString?)->Void){
         let session = NSURLSession(
             configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
         
         // make a network request for a URL, in this case our endpoint
-        session.dataTaskWithURL(NSURL(string: "http://localhost:8888/JSON/nursing1.json")!,
+        session.dataTaskWithURL(NSURL(string: URLS.kJSONQuiz.rawValue)!,
             completionHandler: { (taskData, taskResponse, taskError) -> Void in
                 
                 if let error = taskError
@@ -55,7 +60,7 @@ class NetworkingModel{
 
                     if let error = jsonReadError
                     {
-                        println(error.debugDescription)
+                       // println(error.debugDescription)
                         completetion(nil, error: error.debugDescription)
                     }
                     else{
@@ -68,11 +73,134 @@ class NetworkingModel{
         }).resume()
     }
     
-    //
+    
+    static func testURLSession()
+    {
+        
+        Alamofire.request(.POST, URLS.kAnswers.rawValue, parameters: ["foo": "bar"])
+            .response { request, response, data, error in
+                print(request)
+                print(response)
+                print(error)
+        }
+        return
+        
+        var configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+        var session = NSURLSession(configuration: configuration)
+        var usr = "dsdd"
+        var pwdCode = "dsds"
+        let params:[String: AnyObject] = [
+            "email" : usr,
+            "userPwd" : pwdCode ]
+        
+        let url = NSURL(string: URLS.kAnswers.rawValue)
+        let request = NSMutableURLRequest(URL: url!)
+        request.setValue("application/x-www-form-urlencoded; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        request.HTTPMethod = "POST"
+        var err: NSError?
+        request.HTTPBody = NSJSONSerialization.dataWithJSONObject(params, options: NSJSONWritingOptions.allZeros, error: &err)
+        
+        let task = session.dataTaskWithRequest(request) {
+            data, response, error in
+            
+            let str =  NSString(data: data, encoding: NSUTF8StringEncoding)
+            println(str)
+
+            
+            if let httpResponse = response as? NSHTTPURLResponse {
+                if httpResponse.statusCode != 200 {
+                    println("response was not 200: \(response)")
+                    return
+                }
+            }
+            if (error != nil) {
+                println("error submitting request: \(error)")
+                return
+            }
+            
+            // handle the data of the successful response here
+            var result = NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.allZeros, error: nil) as? NSDictionary
+            println(result)
+        }
+        task.resume()
+    
+    }
     
     
+    static func saveAnswer(qid:Int, answerId:Int, userId:String, correct:Bool, completetion:(NSDictionary?, error:NSString?)->Void){
+        let session = NSURLSession(
+            configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
+        let request = NSMutableURLRequest(URL: NSURL(string: URLS.kAnswers.rawValue)!)
+       //request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+       // request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        request.HTTPMethod = "POST"
+        
+        var c = 0
+        if correct{
+         c = 1
+        }
     
-    
+        //"qid":qid, "aid":answerId, "correct":c, "user":userId
+        var params = ["qid":qid, "aid":answerId, "correct":c, "user":userId ] as Dictionary<String, AnyObject>
+        
+        var err: NSError?
+        let requestBody = NSJSONSerialization.dataWithJSONObject(params, options: NSJSONWritingOptions.allZeros, error: &err)
+        if requestBody == nil {
+            //error
+            println(err?.debugDescription)
+        
+            return
+        }
+        
+        request.HTTPBody = requestBody
+        
+        session.dataTaskWithRequest(request, completionHandler: { (data, response, error) -> Void in
+            dispatch_async(dispatch_get_main_queue(), { () -> Void in
+              //  println(error?.debugDescription)
+                println(request)
+                println(data)
+              // println(response)
+              
+               let str =  NSString(data: data, encoding: NSUTF8StringEncoding)
+               println(str)
+                
+                
+            })
+
+            
+            if let error = error
+                {
+                    
+                    completetion(nil, error: error.debugDescription)
+                    return
+
+             }
+            
+             if let data = data{
+                    // create an NSArray with the JSON response data
+               
+                    var jsonReadError:NSError?
+                    let jsonArray = NSJSONSerialization.JSONObjectWithData(
+                        data, options: NSJSONReadingOptions.AllowFragments, error: &jsonReadError) as? NSDictionary
+                
+                    println(jsonArray)
+
+                
+                    if let error = jsonReadError
+                    {
+                        
+                        completetion(nil, error: error.debugDescription)
+                    }
+                    else{
+                        completetion(jsonArray, error: nil)
+                        
+                    }
+                }
+                
+        }).resume()
+    }
+
 }
 
 

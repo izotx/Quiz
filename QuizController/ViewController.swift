@@ -114,7 +114,10 @@ class ViewController: UIViewController,UITableViewDelegate {
         
         }
     }
-
+    
+    
+   
+    
 
     @IBAction func previousQuestionAction(sender: AnyObject) {
         if let model = quizModel{
@@ -152,26 +155,28 @@ class ViewController: UIViewController,UITableViewDelegate {
         
         
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
-        networkingModel.downloadFile { (dict:[String : AnyObject]?, error) -> Void in
-                        //println("Downloaded! woot woot \(dict)")
+       
+        NetworkingModel.downloadFile { (dict:[String : AnyObject]?, error) -> Void in
+            //println("Downloaded! woot woot \(dict)")
             if let dict = dict {
                 
                 self.quizModel = QuizModel(json: dict)
-               
-               // self.tableView.registerClass(QuizCell.self, forCellReuseIdentifier: QuizCell.identifier)
+                
+                // self.tableView.registerClass(QuizCell.self, forCellReuseIdentifier: QuizCell.identifier)
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
                     self.updateTableContent(0)
                 })
                 
             }
-
+            
             if let error = error {
                 //display error
             }
             
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+            UIApplication.sharedApplication().networkActivityIndicatorVisible = false
         }
-    }
+        
+          }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()

@@ -16,6 +16,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+   
+//        NetworkingModel.saveAnswer(1, answerId: 1, userId: "pl", correct: true, completetion: { (dict, error) -> Void in
+//                
+//                   // println(dict)
+//                
+//                })
+        
+        NetworkingModel.testURLSession()
+        
+        
         return true
     }
 
