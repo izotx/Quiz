@@ -29,8 +29,8 @@ enum QuizQuestions:String{
 }
 
 enum URLS:String{
-    case kSave = "http://izotx.com/igerm/addquiz.php"
-    case kJSON = "http://izotx.com/igerm/nursing.json"
+    case kSave = "https://izotx.com/igerm/addquiz.php"
+    case kJSON = "https://izotx.com/igerm/nursing.json"
 }
 
 
@@ -44,12 +44,12 @@ class NetworkingModel{
         request.HTTPBody = postString.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
         
         let task = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration()).dataTaskWithRequest(request, completionHandler: { (data, response, error) -> Void in
-            println(data)
-            println(response)
-            println(error)
+            print(data)
+            print(response)
+            print(error)
             
-            let string =  NSString(data: data, encoding: NSUTF8StringEncoding)
-            println(string)
+            let string =  NSString(data: data!, encoding: NSUTF8StringEncoding)
+            print(string)
             
             
         })
@@ -67,37 +67,25 @@ class NetworkingModel{
                 
                 if let error = taskError
                 {
-                    println(error.debugDescription)
+                    print(error.debugDescription)
                     completetion(nil, error: error.debugDescription)
                 }
                 else{
                     // create an NSArray with the JSON response data
-                    var jsonReadError:NSError?
-                    
-                    
-                    let jsonArray = NSJSONSerialization.JSONObjectWithData(
-                        taskData, options: nil, error: &jsonReadError) as? [String :AnyObject]
-
-                    if let error = jsonReadError
-                    {
-                        println(error.debugDescription)
-                        completetion(nil, error: error.debugDescription)
+                    // var jsonReadError:NSError?
+                    do {
+                        let jsonArray =  try  NSJSONSerialization.JSONObjectWithData(taskData!, options: .AllowFragments)
+                        completetion(jsonArray as? [String : AnyObject], error: nil)
                     }
-                    else{
-                        completetion(jsonArray, error: nil)
-                        
+                    catch let error as NSError{
+                        print(error);
+                        completetion(nil, error: error.debugDescription)
                     }
                     
                 }
                 
         }).resume()
     }
-    
-    //
-    
-    
-    
-    
 }
 
 
@@ -122,16 +110,12 @@ class QuizModel{
     let userDefaults = NSUserDefaults.standardUserDefaults()
     
     private var quizQuestions = [QuizQuestion]()
-    private var answers = [Int:Int]() //Question id answer
-    private var correctCount:Int = 0
-    private var wrongCount:Int = 0
+    internal var answers = [Int:Int]() //Question id answer
     private var userId:String
     
     private var defaults = NSUserDefaults.standardUserDefaults()
-//    private var userId =
+    
     init(){
-        correctCount = 0
-        wrongCount = 0
         answers = [Int:Int]()
         userId = QuizModel.getUserUDID()
         //get answers
@@ -140,34 +124,42 @@ class QuizModel{
     
     
     func getUserAnswers(user:String)->[Int:Int]?{
-
-        if let data = defaults.objectForKey(Stats.kAnswersKey.rawValue)  as? NSData,     dict = NSKeyedUnarchiver.unarchiveObjectWithData(data) as? [Int:Int] {
+        
+        if let data = defaults.objectForKey(Stats.kAnswersKey.rawValue)  as? NSData,  dict = NSKeyedUnarchiver.unarchiveObjectWithData(data) as? [Int:Int] {
             answers = dict
             return dict
         }
         return nil
     }
     
+    static func clearAll(){
+        let bid =  NSBundle.mainBundle().bundleIdentifier
+        NSUserDefaults.standardUserDefaults().removePersistentDomainForName(bid!)
+        let d = UIApplication.sharedApplication().delegate as! AppDelegate
+        d.quizModel.answers.removeAll()
+        QuizModel.getUserUDID()
+    }
+    
     func saveAnswers(user:String){
-      let data =  NSKeyedArchiver.archivedDataWithRootObject(answers)
-      userDefaults.setObject(data, forKey: Stats.kAnswersKey.rawValue)
-      defaults.synchronize()
+        let data =  NSKeyedArchiver.archivedDataWithRootObject(answers)
+        userDefaults.setObject(data, forKey: Stats.kAnswersKey.rawValue)
+        defaults.synchronize()
     }
     
     
-   static func getUserUDID()->String{
-       let userDefaults = NSUserDefaults.standardUserDefaults()
-    if let id = userDefaults.stringForKey(OtherDefaultsKeys.kIDKey.rawValue){
-        return id
+    static func getUserUDID()->String{
+        let userDefaults = NSUserDefaults.standardUserDefaults()
+        if let id = userDefaults.stringForKey(OtherDefaultsKeys.kIDKey.rawValue){
+            return id
+        }
+        
+        //        case kIDKey = "UniqueKey"
+        
+        let newId =  UIDevice.currentDevice().identifierForVendor!.UUIDString
+        userDefaults.setObject(newId, forKey: OtherDefaultsKeys.kIDKey.rawValue)
+        
+        return newId
     }
-    
-    //        case kIDKey = "UniqueKey"
-    
-    let newId =  UIDevice.currentDevice().identifierForVendor.UUIDString
-    userDefaults.setObject(newId, forKey: OtherDefaultsKeys.kIDKey.rawValue)
-    
-    return newId
-   }
     
     
     convenience init(json:[String:AnyObject]){
@@ -175,15 +167,15 @@ class QuizModel{
         if let questionsArray  = json[QuizQuestions.kQuestionsArray.rawValue] as?  [NSDictionary] {
             for questionObject in questionsArray{
                 let quizQuestion = QuizQuestion()
-              //  println(questionObject)
+                //  print(questionObject)
                 
                 if let correctIndex = questionObject[QuizQuestions.kCorrectIndex.rawValue]as? Int{
                     quizQuestion.correctAnswerIndex = correctIndex
                 }
                 
                 if let qid = questionObject[QuizQuestions.kQuestionIndex.rawValue] as? Int{
-                     quizQuestion.qid = qid
-                }                
+                    quizQuestion.qid = qid
+                }
                 
                 if let questionText = questionObject[QuizQuestions.kQuestionText.rawValue] as? String{
                     quizQuestion.question = questionText
@@ -237,7 +229,7 @@ class QuizModel{
             currentQuestionArrayIndex = currentQuestionArrayIndex - 1
         }
     }
-
+    
     func nextQuestion(){
         if currentQuestionArrayIndex < self.quizQuestions.count - 1  {
             currentQuestionArrayIndex = currentQuestionArrayIndex + 1
@@ -269,87 +261,89 @@ class QuizModel{
     
     
     func questionAnswered(index:Int)->Bool{
-    
+        
         return answers[index] != nil
     }
     
-    
+    //Check if answer is correct
     func isCorrect(questionId:Int,aid:Int)->Bool{
-        let filtered  = self.quizQuestions.filter({$0.qid == questionId})
-        if let question = filtered.last{
+        getQuestionById(questionId)
+        let question = getQuestionById(questionId)
+        if let question = question{
             if question.correctAnswerIndex == aid{
+                print("correct")
                 return true
             }
             
         }
+        print("false")
         return false
-    
+        
     }
     
-    func updateStats(questionId:Int){
+    func updateStats(questionId:Int, correctAnswer:Bool){
         
-        correctCount = 0
-        wrongCount = 0
+        //Checks the values ssaved to defaults
+        var correct = defaults.integerForKey(Stats.kCorrectKey.rawValue)
+        var wrong = defaults.integerForKey(Stats.kWrongKey.rawValue)
         var total = defaults.integerForKey(Stats.kAttemptsKey.rawValue)
         total = total + 1
         
-
-        for answer in answers{
-        
-            
-            let filtered  = self.quizQuestions.filter({$0.qid == questionId})
-            if let question = filtered.last{
-                
-                if question.correctAnswerIndex == answer.1
-                {
-                    correctCount = correctCount + 1
-                }
-                else{
-                    wrongCount = wrongCount + 1
-                }
-            }
+        if correctAnswer {
+            correct = correct + 1
+        }
+        else{
+            wrong = wrong + 1
         }
         
-        defaults.setInteger(correctCount, forKey: Stats.kCorrectKey.rawValue)
-        defaults.setInteger(wrongCount, forKey: Stats.kWrongKey.rawValue)
+        
+        
+        //Save updated stats
+        defaults.setInteger(correct, forKey: Stats.kCorrectKey.rawValue)
+        defaults.setInteger(wrong, forKey: Stats.kWrongKey.rawValue)
         defaults.setInteger(total, forKey: Stats.kAttemptsKey.rawValue)
-
+        
         defaults.synchronize()
         
     }
     
-static  func getStats()->(correct:Int, wrong:Int,attempts:Int,score:Double){
-    
+    static  func getStats()->(correct:Int, wrong:Int,attempts:Int,score:Double){
+        
         let defaults = NSUserDefaults.standardUserDefaults()
-        var correct = defaults.integerForKey(Stats.kCorrectKey.rawValue)
-        var wrong = defaults.integerForKey(Stats.kWrongKey.rawValue)
-        var attempts = defaults.integerForKey(Stats.kAttemptsKey.rawValue)
+        let correct = defaults.integerForKey(Stats.kCorrectKey.rawValue)
+        let wrong = defaults.integerForKey(Stats.kWrongKey.rawValue)
+        let attempts = defaults.integerForKey(Stats.kAttemptsKey.rawValue)
         var score = 0.0
-    
+        
         if attempts != 0 {
-          score =  Double(correct) / Double(attempts) * 100.0
-          score = round(10 * score)/10
+            score =  Double(correct) / Double(attempts) * 100.0
+            score = round(10 * score)/10
         }
         
         
         return (correct, wrong, attempts,score)
     }
-
-        
-    //It might be initially selected answer
+    
+    
+    //It will be stored in array of index of question not just increment
     func selectAnswer(question:Int, answer:Int){
-        if let q = getQuestionById(question){
-           answers[question] = answer
-        
+        if let _ = getQuestionById(question){
+            answers[question] = answer
+            saveAnswers(QuizModel.getUserUDID())
+            updateStats(question, correctAnswer: isCorrect(question, aid: answer))
+            
+        }
+        else{
+            print("ERROR question doesn't exist??")
         }
     }
- 
+    
     func getUnansweredQuestions()->[QuizQuestion]{
-
+        
         //get all questions
         var unansweredQuizQuestions = [QuizQuestion]()
-        var answers = getUserAnswers(QuizModel.getUserUDID())
-    
+        let answers = getUserAnswers(QuizModel.getUserUDID())
+        
         if let answers = answers{
             for q in getAllQuestions()
             {
@@ -361,17 +355,17 @@ static  func getStats()->(correct:Int, wrong:Int,attempts:Int,score:Double){
                         }
                     }else{
                         unansweredQuizQuestions.append(q)
-                       
+                        
                     }
                 }
+            }
         }
-    }
         else{
             return getAllQuestions()
-    }
-    
-    
-
+        }
+        
+        
+        
         return unansweredQuizQuestions
     }
     
@@ -380,42 +374,45 @@ static  func getStats()->(correct:Int, wrong:Int,attempts:Int,score:Double){
         //select answer
         selectAnswer(questionIndex, answer: answer)
         
-        if let answer = answers[questionIndex]{
-            confirmAnswer(questionIndex, answer:answer)
-            return getFeedback(questionIndex, answer: answer)
+        print("Answer \(answer)")
         
+        if let answer = answers[questionIndex]{
+            sendAnswer(questionIndex, answer:answer)
+            print("Answers \(answers)")
+            
+            return getFeedback(questionIndex, answer: answer)
+            
         }
-            return "Please select your answer!"
+        return "Please select your answer!"
     }
     
     //Confirmed Answer
-    func confirmAnswer(questionId:Int, answer:Int){
-        let filtered  = self.quizQuestions.filter({$0.qid == questionId})
-        if let question = filtered.last{
-           
-            answers[questionId] = answer
-            updateStats(questionId)
-            
-            
+    func sendAnswer(questionId:Int, answer:Int){
+        if let question =   getQuestionById(questionId)
+        {
             //Convert bool to int
             var correct = 0
             if answer == question.correctAnswerIndex
             {
-              correct = 1
+                correct = 1
             }
-            saveAnswers(QuizModel.getUserUDID())
+            
+            
+            //Send information about quiz to the web service
             NetworkingModel.quizAnswerRequest(questionId, aid: answer, correct: correct, user: QuizModel.getUserUDID())
         }
+        
     }
     
+    //Returns answer selected for given index
     func getAnswer(qid:Int)->Int?{
         return answers[qid]
     }
     
     
     func isSelected(question:Int,answer:Int)-> Bool{
-     
-            return answers[question] == answer
+        
+        return answers[question] == answer
     }
     
     func getFeedback(question:Int, answer:Int)->String{
@@ -423,8 +420,8 @@ static  func getStats()->(correct:Int, wrong:Int,attempts:Int,score:Double){
         if let q = getQuestionById(question){
             return q.feedbacks[answer]
         }
-
-        return "wrong index"        
+        
+        return "wrong index"
     }
     
     func getQuestionById(questionId:Int)->QuizQuestion?{
@@ -434,7 +431,7 @@ static  func getStats()->(correct:Int, wrong:Int,attempts:Int,score:Double){
         }
         return nil
     }
-   
+    
     
 }
 

@@ -20,30 +20,39 @@ class StatsViewController: UIViewController {
     
     var quizModel:QuizModel?
     
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        modalPresentationStyle = UIModalPresentationStyle.FullScreen
-        modalTransitionStyle = UIModalTransitionStyle.FlipHorizontal
+    func updateUI(){
         percantegeLabel.text = "\(QuizModel.getStats().score)%"
         wrongAnswersLabel.text = "\(QuizModel.getStats().wrong)"
         correctAnswersLabel.text = "\(QuizModel.getStats().correct)"
         totalAnswersLabel.text = "\(QuizModel.getStats().attempts)"
         userUUIDNumber.text = "\(QuizModel.getUserUDID())"
-       if let qm = self.quizModel
-       {
-        var remainingQuestionCount = qm.getUnansweredQuestions().count
-        remaingQuestionsLabel.text = "\(remainingQuestionCount)"
-        
-        if(remainingQuestionCount == 0){
-            generalFeedback.text = "Great job! Thank you for answering all questions!"
+        if let qm = self.quizModel
+        {
+            let remainingQuestionCount = qm.getUnansweredQuestions().count
+            remaingQuestionsLabel.text = "\(remainingQuestionCount)"
+            
+            if(remainingQuestionCount == 0){
+                generalFeedback.text = "Great job! Thank you for answering all questions!"
+            }
+            else{
+                generalFeedback.text = "Tap on the quiz button to get back to quiz question."
+            }
         }
-        else{
-            generalFeedback.text = "Tap on the quiz button to get back to quiz question."
-        }
-      }
     }
     
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        modalPresentationStyle = UIModalPresentationStyle.FullScreen
+        modalTransitionStyle = UIModalTransitionStyle.FlipHorizontal
+        updateUI()
+    }
+    
+    @IBAction func clearAllAction(sender: AnyObject) {
+        
+        QuizModel.clearAll()
+        updateUI()
+    }
     
     @IBAction func quizAction(sender: AnyObject) {
         navigationController?.popViewControllerAnimated(true)

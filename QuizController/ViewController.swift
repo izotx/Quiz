@@ -12,22 +12,22 @@ import UIKit
 class QuizCell:UITableViewCell{
     static let identifier = "kQuizCell"
     @IBOutlet weak var answerLabel: UILabel!
-    required init(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-            
+        
     }
-
+    
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-    
+        
     }
-
+    
 }
 
 class ViewController: UIViewController,UITableViewDelegate {
     @IBOutlet weak var questionConstraintHeight: NSLayoutConstraint!
     @IBOutlet weak var feedbackConstraintHeight: NSLayoutConstraint!
-
+    
     @IBOutlet weak var questionTextView: UITextView!
     @IBOutlet weak var feedbackTextView: UITextView!
     @IBOutlet weak var tableView: UITableView!
@@ -39,32 +39,48 @@ class ViewController: UIViewController,UITableViewDelegate {
     
     @IBOutlet weak var doneButton: UIBarButtonItem!
     
-//    var helpView = UIView(frame: view.bounds)
-    
     var dataSource: DataSource?
-    var quizModel: QuizModel?
+    var delegate = UIApplication.sharedApplication().delegate as! AppDelegate
+    var quizModel: QuizModel!
+    
     var networkingModel = NetworkingModel()
     var currentQuestion:QuizQuestion?
     var tempAnswerIndex:Int?
     
     
+    @IBAction func goBackToHandHygieneAction(sender: AnyObject) {
+        dismissViewControllerAnimated(true, completion: { () -> Void in
+            
+        })
+    }
+    
+    func delay(delay:Double, closure:()->()) {
+        dispatch_after(
+            dispatch_time(
+                DISPATCH_TIME_NOW,
+                Int64(delay * Double(NSEC_PER_SEC))
+            ),
+            dispatch_get_main_queue(), closure)
+    }
+    
+    
     
     @IBAction func confirmAnswerAction(sender: AnyObject) {
-
+        
         if let quizModel = quizModel, qid = currentQuestion?.qid, answer = tempAnswerIndex {
-            quizModel.selectAnswer(qid, answer: answer) // select answer
+            
             
             self.feedbackTextView.alpha = 0
             UIView.animateWithDuration(1, animations: { () -> Void in
                 self.feedbackTextView.alpha = 1
-            }, completion: { (completed) -> Void in
-                
-                self.updateTableContent(quizModel.currentQuestionArrayIndex)
-                self.feedbackTextView.text = quizModel.confirmAnswerAndGetFeedback(qid, answer:answer) as String
-                //self.showFeedback()
-                self.delay(1.0, closure: { () -> () in
-                    self.performSegueWithIdentifier("showStatsSegue", sender: self)
-                })
+                }, completion: { (completed) -> Void in
+                    
+                    self.updateTableContent(quizModel.currentQuestionArrayIndex)
+                    self.feedbackTextView.text = quizModel.confirmAnswerAndGetFeedback(qid, answer:answer) as String
+                    
+                    self.delay(0.5, closure: { () -> () in
+                        self.showStats()
+                    })
             })
         }
         else{
@@ -76,18 +92,21 @@ class ViewController: UIViewController,UITableViewDelegate {
             })
         }
     }
-
-      
     
-    func updateTableContent(index:Int){
-       
-
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        if quizModel.currentQuestionArrayIndex < quizModel.getAllQuestions().count{
+            self.updateTableContent(quizModel.currentQuestionArrayIndex)
+        }
+        
+        
+    }
+    
+    
+    
+    func updateToolbar(){
+        //update toolbar
         if let quizModel = quizModel {
-            //set index of question
-            quizModel.currentQuestionArrayIndex = index
-            currentQuestion = quizModel.getAllQuestions()[index]
-
-            //update toolbar 
             if quizModel.firstQuestion(){
                 previousQuestionButton.enabled = false
             }
@@ -98,25 +117,35 @@ class ViewController: UIViewController,UITableViewDelegate {
                 nextQuestionButton.enabled = false
             }
             else{
-              nextQuestionButton.enabled = true
+                nextQuestionButton.enabled = true
             }
             
             if !quizModel.questionAnswered(currentQuestion!.qid!)
             {
-                  previousQuestionButton.enabled = false
-                  nextQuestionButton.enabled = false
+                previousQuestionButton.enabled = false
+                nextQuestionButton.enabled = false
             }
+        }
+    }
+    
+    
+    func updateTableContent(index:Int){
+        
+        
+        if let quizModel = quizModel {
+            //set index of question
+            quizModel.currentQuestionArrayIndex = index
+            currentQuestion = quizModel.getAllQuestions()[index]
+            //Update toolbar
+            updateToolbar()
             
-            let question = quizModel.getAllQuestions()[index]
-            questionTextView.text = question.question
-
-           
-          
+            //Update UI
+            questionTextView.text = currentQuestion!.question
             self.feedbackTextView.text = ""
             self.tableView.userInteractionEnabled = true
             self.doneButton.enabled = true
             
-           
+            
             if let qid  = currentQuestion?.qid, aid = quizModel.getAnswer(qid){
                 if quizModel.isSelected(qid, answer: aid){
                     if quizModel.isCorrect(qid, aid: aid)
@@ -128,65 +157,62 @@ class ViewController: UIViewController,UITableViewDelegate {
                 }
             }
             
-            
-        self.dataSource = DataSource(items: quizModel.getAllQuestions()[self.quizModel!.currentQuestionArrayIndex].answers, identifier: QuizCell.identifier, cellhandler: { (cell, item, indexPath) -> Void in
-            
-            if let c = cell as? QuizCell, let item = item as? String, qid = self.currentQuestion?.qid{
-                c.answerLabel.text = item;
-                c.accessoryType = UITableViewCellAccessoryType.None
-                c.tintColor = UIColor.whiteColor()
-    
-                if let tempAnswer = self.tempAnswerIndex{//user selected answer
+            //Settinp the datasource for the
+            self.dataSource = DataSource(items: quizModel.getAllQuestions()[self.quizModel!.currentQuestionArrayIndex].answers, identifier: QuizCell.identifier, cellhandler: { (cell, item, indexPath) -> Void in
+                
+                if let c = cell as? QuizCell, let item = item as? String, qid = self.currentQuestion?.qid{
+                    c.answerLabel.text = item;
+                    c.accessoryType = UITableViewCellAccessoryType.None
+                    c.tintColor = UIColor.darkGrayColor()
                     
-                    if indexPath.row == tempAnswer
-                    {
-                        c.accessoryType = UITableViewCellAccessoryType.Checkmark
+                    if let tempAnswer = self.tempAnswerIndex{//user selected answer
+                        
+                        if indexPath.row == tempAnswer
+                        {
+                            c.accessoryType = UITableViewCellAccessoryType.Checkmark
+                        }
+                        
+                    }
+                    else{
+                        if quizModel.isSelected(qid, answer: indexPath.row){
+                            c.accessoryType = UITableViewCellAccessoryType.Checkmark
+                            
+                            if quizModel.isCorrect(qid, aid: indexPath.row)
+                            {
+                                c.tintColor = UIColor.greenColor()
+                                
+                            }
+                        }
                     }
                     
-                }
-                else{
-                    if quizModel.isSelected(qid, answer: indexPath.row){
-                         c.accessoryType = UITableViewCellAccessoryType.Checkmark
-                        
+                    if quizModel.isSelected(qid, answer: indexPath.row) && self.tempAnswerIndex == nil {
+                        c.accessoryType = UITableViewCellAccessoryType.Checkmark
                         if quizModel.isCorrect(qid, aid: indexPath.row)
                         {
                             c.tintColor = UIColor.greenColor()
-                          
+                            
+                        }
+                    }
+                    
+                    if quizModel.isSelected(qid, answer: indexPath.row) && self.tempAnswerIndex != nil && self.tempAnswerIndex == indexPath.row{
+                        c.accessoryType = UITableViewCellAccessoryType.Checkmark
+                        if quizModel.isCorrect(qid, aid: indexPath.row)
+                        {
+                            c.tintColor = UIColor.greenColor()
+                            
                         }
                     }
                 }
-                
-                if quizModel.isSelected(qid, answer: indexPath.row) && self.tempAnswerIndex == nil {
-                    c.accessoryType = UITableViewCellAccessoryType.Checkmark
-                    if quizModel.isCorrect(qid, aid: indexPath.row)
-                    {
-                        c.tintColor = UIColor.greenColor()
-                        
-                    }
-                }
-                
-                if quizModel.isSelected(qid, answer: indexPath.row) && self.tempAnswerIndex != nil && self.tempAnswerIndex == indexPath.row{
-                    c.accessoryType = UITableViewCellAccessoryType.Checkmark
-                    if quizModel.isCorrect(qid, aid: indexPath.row)
-                    {
-                        c.tintColor = UIColor.greenColor()
-                        
-                    }
-                }
-
-                
-                
-            }
-        })
-
-        self.tableView.dataSource = self.dataSource
-        self.tableView.delegate = self
-        self.tableView.reloadData()
-        
+            })
+            
+            self.tableView.dataSource = self.dataSource
+            self.tableView.delegate = self
+            self.tableView.reloadData()
+            
         }
     }
-
-
+    
+    
     @IBAction func previousQuestionAction(sender: AnyObject) {
         if let model = quizModel{
             tempAnswerIndex = nil
@@ -203,37 +229,18 @@ class ViewController: UIViewController,UITableViewDelegate {
         }
     }
     
-//    
-//    func tableView(tableView: UITableView, willSelectRowAtIndexPath indexPath: NSIndexPath) -> NSIndexPath? {
-//        if let quizModel = self.quizModel, qid = currentQuestion?.qid{
-//            if quizModel.isSelected(qid, answer: indexPath.row) && quizModel.isCorrect(qid, aid: indexPath.row)
-//            {
-//                return nil
-//            }
-//        }
-//        return indexPath
-//    }
-//    
-    
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         
-      
-        if let quizModel = self.quizModel, qid = currentQuestion?.qid{
-            
+        
+        if let _ = self.quizModel, _ = currentQuestion?.qid{
+            //Sets temporary selection that will be used to determine if the answer is selected or not
             tempAnswerIndex = indexPath.row
             self.feedbackTextView.text = ""
+            //Correct answer is checked when the table is reloaded
             self.tableView.reloadData()
         }
     }
     
-    func delay(delay:Double, closure:()->()) {
-        dispatch_after(
-            dispatch_time(
-                DISPATCH_TIME_NOW,
-                Int64(delay * Double(NSEC_PER_SEC))
-            ),
-            dispatch_get_main_queue(), closure)
-    }
     
     
     override func viewDidLoad() {
@@ -242,48 +249,76 @@ class ViewController: UIViewController,UITableViewDelegate {
         self.tableView.rowHeight = UITableViewAutomaticDimension;
         self.tableView.estimatedRowHeight = 100.0
         self.navigationController?.navigationBarHidden = true
+        self.quizModel =  delegate.quizModel
+        prepareQuizContent()
         
-        
+    }
+    
+    
+    func prepareQuizContent(){
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
         networkingModel.downloadFile { (dict:[String : AnyObject]?, error) -> Void in
-                        //println("Downloaded! woot woot \(dict)")
             if let dict = dict {
                 
                 self.quizModel = QuizModel(json: dict)
-               
-               // self.tableView.registerClass(QuizCell.self, forCellReuseIdentifier: QuizCell.identifier)
-                dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                    self.updateTableContent(0)
-                })
+                self.delegate.quizModel = self.quizModel
                 
-            }
-
-            if let error = error {
-                //display error
-                self.feedbackTextView.text = "Error. Please try again later."
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    let quizq = self.quizModel?.getUnansweredQuestions()
+                    //get all
+                    if quizq?.count > 0 {
+                        let qf =  quizq!.first//take first from unanswered questions
+                        
+                        var index  = 0
+                        if let _ = self.quizModel{
+                            for q in self.quizModel!.getAllQuestions()
+                            {
+                                if  qf?.qid == q.qid
+                                {
+                                    self.updateTableContent(index)
+                                    break
+                                }
+                                index++
+                            }
+                        }
+                    }
+                    else{
+                        if self.quizModel?.getAllQuestions().count > 0{
+                            self.updateTableContent(0)
+                        }
+                        self.showStats()
+                    }
+                    UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                    }
+                )
             }
             
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+            if let _ = error {
+                //display error
+                dispatch_async(dispatch_get_main_queue(), {
+                    self.feedbackTextView.text = "Error. Please try again later."
+                    UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                })
+            }
+            
+            
         }
     }
-
+    
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
     
-    func showFeedback(){
-      let vc =  storyboard?.instantiateViewControllerWithIdentifier("FeedbackViewController") as! FeedbackViewController
-        vc.modalPresentationStyle = UIModalPresentationStyle.FullScreen
-        vc.modalTransitionStyle = UIModalTransitionStyle.FlipHorizontal
-        self.presentViewController(vc, animated: true) { () -> Void in
-            
-        }
+    
+    func showStats(){
+        self.performSegueWithIdentifier("showStatsSegue", sender: self)
     }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if segue.identifier == "showStatsSegue"{
-            if let vc = segue.destinationViewController as? StatsViewController{
+            if let _ = segue.destinationViewController as? StatsViewController{
                 let vc = segue.destinationViewController as! StatsViewController
                 vc.modalPresentationStyle = UIModalPresentationStyle.FullScreen
                 vc.modalTransitionStyle = UIModalTransitionStyle.FlipHorizontal
